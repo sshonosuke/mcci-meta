@@ -1,5 +1,7 @@
 # mcci-meta: A Unified Method for Improved Inference in Random-effects Meta-analysis via Monte Carlo Conditioning   
-This package implements the unified method for improved inference via Monte Carlo Conditioning (MC) in random-effects meta-analysis, as proposed by Sugasawa and Noma (2017).
+This package implements the unified method for improved inference via Monte Carlo Conditioning (MC) in random-effects meta-analysis, as proposed by the following papers.
+
+Sugasawa, S. and Noma, H. (2017). A Unified Method for Improved Inference in Random-effects Meta-analysis.  https://arxiv.org/abs/1711.06393
 
 Functions are implemented in *MC-function.R*.
 Install R functions and example datasets.
