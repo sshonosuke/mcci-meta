@@ -1,6 +1,8 @@
 # mcci-meta: A Unified Method for Improved Inference in Random-effects Meta-analysis via Monte Carlo Conditioning   
 This package implements the unified method for improved inference via Monte Carlo Conditioning (MC) in random-effects meta-analysis, as proposed by Sugasawa and Noma (2017).
-Install R functions and datasets
+
+Functions are implemented in *MC-function.R*.
+Install R functions and example datasets.
 ```{r}
 load("Example-Data.RData") 
 source("MC-function.R")
@@ -8,18 +10,18 @@ source("MC-function.R")
 
 # Univariate meta-analysis
 ```{r}
-set.seed(1)
 library(metafor)
 mag=magnesium
 ```
 
-Apply the propose method
+Apply the proposed method.
 ```{r}
+set.seed(1)
 EX=MA.ECI(mag$y,mag$v,mc=1000)
 EX.CI=exp(EX)
 ```
 
-Apply other existing methods
+Apply other existing methods.
 ```{r}
 # Darsimonian-Laird method
 DL=rma.uni(mag$y,mag$v,method="DL")
@@ -46,7 +48,7 @@ hmu=sum(W*Y)/sum(W); sd=sqrt(1/sum(W))
 PTE.CI=exp(c(hmu+qnorm(0.025)*sd,hmu+qnorm(0.975)*sd))
 ```
 
-Summarize the results
+Summarize the results.
 ```{r}
 EST=c(exp(ML$b),exp(DL$b),exp(ML$b),exp(REML$b),exp(hmu))
 CI=rbind(EX.CI,DL.CI,LR.CI,REML.CI,PTE.CI)
