@@ -15,9 +15,13 @@ source("MC-function.R")
 The dataset used here consists 7 trials of the treatment of suspected acute myocardial infarction with intravenous magnesium. 
 
 Apply the proposed method.
+- `y`: vector of estimates
+- `Di`: vector of estimated variances
+- `alpha`: significance level
+- `mc`: number of Monte Calro samples
 ```{r}
 set.seed(1)
-EX=MA.ECI(mag$y,mag$v,mc=1000)
+EX=MA.ECI(y=mag$y,Di=mag$v,alpha=0.05,mc=1000)
 EX.CI=exp(EX)
 ```
 
@@ -79,14 +83,16 @@ ni=cbind(AuditC$TP+AuditC$FN,AuditC$FP+AuditC$TN)
 S=1/(pp*(1-pp)*ni)
 ```
 
-Apply the proposed method. (It would take much time when large values of *mc*, *R* and *grid* are used.)
-- *mc*: number of Monte Carlo samples
-- *R*: number of iterations in the bisectional method
-- *grid*: number of points to approximate confidence boundary
-- *alpha*: significance level
+Apply the proposed method using `ECR.BMA`. (It would take much time when large values of *mc*, *R* and *grid* are used.)
+- `y`: (k,2) matrix of estimates (k: number of studies)
+- `S`: (k,2) matrix of estimated variances
+- `mc`: number of Monte Carlo samples
+- `R`: number of iterations in the bisectional method
+- `grid`: number of points to approximate confidence boundary
+- `alpha`: significance level
 ```{r}
 set.seed(2)
-ECR=ECR.BMA(y,S,mc=100,R=5,grid=200,alpha=0.05) 
+ECR=ECR.BMA(y=y,S=S,mc=100,R=5,grid=200,alpha=0.05) 
 ```
 
 Smoothing the resutling confidence limits via moving average.
@@ -118,57 +124,44 @@ legend("bottomright",c("Data point","Summary estimate","SROC","Approximate CR","
 
 
 # Network meta-analysis
+We consider network meta-analysis of antipsychotic medication for prevention of relapse of schizophrenia. This analysis includes 15 trials comparing eight treatments with placebo.
+The dataset `SCZ` and list of matrices `invC` are incldued in `Example-Data.RData`.
+
 ```{r}
-set.seed(1)
 Y=SCZ[[1]]; X=SCZ[[2]]; Z=SCZ[[3]]; S=SCZ[[4]]
 p=dim(X)[2]
-MC=1000
-alpha=0.05
-
-IC=function(cc){
-  C=matrix(0,p,p); C[1,]=cc
-  ind=(1:p)[cc!=1]
-  for(j in 2:p){
-    C[j,ind[j-1]]=1
-  }
-  solve(C)
-}
-
-cc.set=c()
-for(j in 1:p){
-  cc=rep(0,p); cc[j]=1
-  cc.set=rbind(cc.set,cc)
-}
 
 Lab=dimnames(X)[[2]]
-
 ECI=matrix(NA,p,2); RMCI=matrix(NA,p,2)
-MLCI=matrix(NA,p,4)
 dimnames(ECI)[[2]]=dimnames(RMCI)[[2]]=c("Lower","Upper")
-dimnames(MLCI)[[2]]=c("Lower","Upper","Lower","Upper")
-dimnames(ECI)[[1]]=dimnames(RMCI)[[1]]=dimnames(MLCI)[[1]]=Lab
-Mu.ML=c(); Mu.RML=c()
+dimnames(ECI)[[1]]=dimnames(RMCI)[[1]]=Lab
+```
 
-
-# REML method
+Apply the REML method.
+```{r}
 res=NMA.RML(Y,X,Z,S)
-rml.beta=res[[1]]; ACV=res[[2]]
-ml.beta=NMA(Y,X,Z,S)[1:p]
+Mu.RML=res[[1]]; ss=sqrt(diag(res[[2]]))
+RMCI[,1]=Mu.RML+qnorm(0.05/2)*ss
+RMCI[,2]=Mu.RML+qnorm(1-0.05/2)*ss
+```
 
+Apply the proposed method using the function `NMA.CI`.
+- Y: vector of estimates
+- X: (N,p) design matrix for fixed effects
+- Z: (N,N*p) design matrix for random effects
+- S: vector of estimated varinces
+- mc: number of Monte Carlo samples
+- alpha: significance level
+```{r}
+set.seed(3)
 for(i in 1:p){
-  invC=IC(cc.set[i,])
-  ECI[i,]=NMA.CI(Y,X%*%invC,Z,S,mc=MC,alpha=alpha)[[1]]  # Proposed method
-  Mu.ML[i]=t(cc.set[i,])%*%ml.beta
-  Mu.RML[i]=t(cc.set[i,])%*%rml.beta
-  s=sqrt(t(cc.set[i,])%*%ACV%*%cc.set[i,])
-  RMCI[i,]=c(Mu.RML[i]+s*qnorm(alpha/2),Mu.RML[i]+s*qnorm(1-alpha/2))
-  MLCI[i,]=NMA.LRCI(Y,X%*%invC,Z,S,alpha=alpha)
+  ECI[i,]=NMA.CI(Y=Y,X=X%*%invC[[i]],Z=Z,S=S,mc=100,alpha=0.05)[[1]] 
   print(i)
 }
 
 # Results
-CI=cbind(ECI,MLCI[,1:2],RMCI)
-dimnames(CI)[[2]]=c("ECI-low","ECI-up","LR-low","LR-up","RML-low","RML-up")
+CI=cbind(ECI,RMCI)
+dimnames(CI)[[2]]=c("ECI-low","ECI-up","RML-low","RML-up")
 exp(CI)
 
 
