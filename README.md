@@ -4,17 +4,15 @@ This package implements the unified method for improved inference via Monte Carl
 Sugasawa, S. and Noma, H. (2017). A Unified Method for Improved Inference in Random-effects Meta-analysis.  https://arxiv.org/abs/1711.06393
 
 Functions are implemented in *MC-function.R*.
-Install R functions and example datasets.
+This tutorial replicates the results in Sections 3.4, 4.4 and 5.4 in the paper.
+First, install R functions and example datasets.
 ```{r}
 load("Example-Data.RData") 
 source("MC-function.R")
 ```
 
 # Univariate meta-analysis
-```{r}
-library(metafor)
-mag=magnesium
-```
+The dataset used here consists 7 trials of the treatment of suspected acute myocardial infarction with intravenous magnesium. 
 
 Apply the proposed method.
 ```{r}
@@ -25,6 +23,8 @@ EX.CI=exp(EX)
 
 Apply other existing methods.
 ```{r}
+library(metafor)
+
 # Darsimonian-Laird method
 DL=rma.uni(mag$y,mag$v,method="DL")
 DL.CI=exp(c(DL$ci.lb,DL$ci.ub))
@@ -61,8 +61,11 @@ round(result,3)
 ```
 
 # Bivariate meta-analysis
+We analyze the dataset including 14 studies regarding a short screening test for alcohol problems.
+The dataset is available in R package *mada*.
+
+Compute estimates of log-odds ratios and their associated standard errors.
 ```{r}
-set.seed(1)
 library(mada)
 data(AuditC)
 dd=madad(AuditC)
@@ -74,23 +77,37 @@ pp=cbind(dd$sens$sens,1-dd$spec$spec)
 y=logit(pp)
 ni=cbind(AuditC$TP+AuditC$FN,AuditC$FP+AuditC$TN)
 S=1/(pp*(1-pp)*ni)
+```
 
-# Proposed method
+Apply the proposed method. (It would take much time when large values of *mc*, *R* and *grid* are used.)
+- *mc*: number of Monte Carlo samples
+- *R*: number of iterations in the bisectional method
+- *grid*: number of points to approximate confidence boundary
+- *alpha*: significance level
+```{r}
+set.seed(2)
 ECR=ECR.BMA(y,S,mc=100,R=5,grid=200,alpha=0.05) 
+```
 
+Smoothing the resutling confidence limits via moving average.
+```{r}
 MA=function(x,n){ 
   a=(n-1)/2; m=length(x)
   xx=c(x[(m-a+1):m],x,x[1:a])
   as.vector(filter(xx,rep(1,n))/n)[(a+1):(m+a)]
 }
 
-m=7
+m=7  # number of points to compute local average
 sECR=cbind(MA(ECR[,1],m),MA(ECR[,2],m))
+```
 
-# Reitsuma's method
+Apply the Reitsuma's method.
+```{r}
 fits=reitsma(AuditC,method="reml")
+```
 
-# Plot
+Make a figure summarizing the results.
+```{r}
 plot(fits,sroclwd=2,main ="",
      ylim=c(0.5,1),xlim=c(0,0.52))
 points(invlogit(sECR)[,c(2,1)],type="l",lty=2)
