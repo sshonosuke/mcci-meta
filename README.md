@@ -146,23 +146,23 @@ RMCI[,2]=Mu.RML+qnorm(1-0.05/2)*ss
 ```
 
 Apply the proposed method using the function `NMA.CI`.
-- Y: vector of estimates
-- X: (N,p) design matrix for fixed effects
-- Z: (N,N*p) design matrix for random effects
-- S: vector of estimated varinces
-- mc: number of Monte Carlo samples
-- alpha: significance level
+- `Y`: vector of estimates
+- `X`: (N,p) design matrix for fixed effects
+- `Z`: (N,N*p) design matrix for random effects
+- `S`: vector of estimated varinces
+- `mc`: number of Monte Carlo samples
+- `alpha`: significance level
 ```{r}
 set.seed(3)
 for(i in 1:p){
   ECI[i,]=NMA.CI(Y=Y,X=X%*%invC[[i]],Z=Z,S=S,mc=100,alpha=0.05)[[1]] 
   print(i)
 }
+```
 
-# Results
+Summarizing the results.
+```{r}
 CI=cbind(ECI,RMCI)
 dimnames(CI)[[2]]=c("ECI-low","ECI-up","RML-low","RML-up")
 exp(CI)
-
-
 ```
